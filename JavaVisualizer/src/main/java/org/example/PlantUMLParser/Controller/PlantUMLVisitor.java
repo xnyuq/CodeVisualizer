@@ -2,6 +2,9 @@ package org.example.PlantUMLParser.Controller;
 
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.ConstructorDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import org.example.PlantUMLParser.Model.ClassField;
 import org.example.PlantUMLParser.Model.ClassMethod;
@@ -33,13 +36,19 @@ public class PlantUMLVisitor extends VoidVisitorAdapter<PlantUMLDiag> {
 
         // Parse fields
         List<ClassField> fields = new ArrayList<>();
-        classOrInterface.getFields().forEach(field -> fields.add(PlantUMLHelper.toClassField(field)));
+        classOrInterface.getFields().forEach((FieldDeclaration field) -> {
+            fields.add(PlantUMLHelper.toClassField(field));
+        });
         // Parse methods
         List<ClassMethod> methods = new ArrayList<>();
         // Parse Constructors
-        classOrInterface.getConstructors().forEach(constructor -> methods.add(PlantUMLHelper.toClassMethod(constructor)));
+        classOrInterface.getConstructors().forEach((ConstructorDeclaration constructor) -> {
+            methods.add(PlantUMLHelper.toClassMethod(constructor));
+        });
         // Parse class methods
-        classOrInterface.getMethods().forEach(method -> methods.add(PlantUMLHelper.toClassMethod(method)));
+        classOrInterface.getMethods().forEach((MethodDeclaration method) -> {
+            methods.add(PlantUMLHelper.toClassMethod(method));
+        });
 
 
         javaClass.setFields(fields);

@@ -1,9 +1,12 @@
 package org.example.PlantUMLParser.Controller;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.*;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.Type;
 import org.example.PlantUMLParser.Model.ClassField;
 import org.example.PlantUMLParser.Model.ClassMethod;
 import org.example.PlantUMLParser.Model.ClassRelation;
@@ -63,22 +66,62 @@ public class PlantUMLHelper {
         // Deal with inheritance and implementation
         String className = classOrInterface.getNameAsString();
 
-        classOrInterface.getExtendedTypes().forEach(extendedType -> plantUML.addRelation(
-                new ClassRelation(extendedType.getNameAsString(), className, "<|--")));
-        classOrInterface.getImplementedTypes().forEach(implementedType -> plantUML.addRelation(
-                new ClassRelation(implementedType.getNameAsString(), className, "<|..")));
-        System.out.println("[*] Class: " + className);
-//        for (MethodDeclaration method: classOrInterface.getMethods()) {
-//            List<VariableDeclarator> variables = method.findAll(VariableDeclarator.class);
-//            for (VariableDeclarator variable: variables) {
-//                System.out.println(variable.getNameAsString() + ": " + variable.getTypeAsString());
-//            }
+        classOrInterface.getExtendedTypes().forEach((ClassOrInterfaceType extendedType) -> {
+            plantUML.addRelation(
+                    new ClassRelation(extendedType.getNameAsString(), className, "<|--"));
+        });
+        classOrInterface.getImplementedTypes().forEach((ClassOrInterfaceType implementedType) -> {
+            plantUML.addRelation(
+                    new ClassRelation(implementedType.getNameAsString(), className, "<|.."));
+        });
+//        System.out.println("[*] Class: " + className);
+        // isArrayType() to check if the type is an array
+        // isPrimitiveType() to check if the type is a primitive type
+        // getElementType() to get the type of the array
+        for (FieldDeclaration field: classOrInterface.getFields()) {
+//            System.out.println("[*] Field: " + field.toString());
+//            Type tp = field.getVariable(0).getType();
+//            System.out.println("\t" + getGenericType(tp).toString());
+
+            //System.out.println("\t" + field.getElementType());
+
+            List<VariableDeclarator> variables = field.findAll(VariableDeclarator.class);
+            for (VariableDeclarator variable: variables) {
+                String type = variable.getTypeAsString();
+                if (plantUML.containsClassName(type)) {
+                    plantUML.addRelation(
+                            new ClassRelation(type, className, "*--"));
+                }
+            }
+        }
+        for (MethodDeclaration method: classOrInterface.getMethods()) {
+            List<VariableDeclarator> variables = method.findAll(VariableDeclarator.class);
+            for (VariableDeclarator variable: variables) {
+                String type = variable.getTypeAsString();
+                if (plantUML.containsClassName(type)) {
+                    plantUML.addRelation(
+                            new ClassRelation(type, className, "*--"));
+                }
+            }
+        }
+
+//        for (MethodCallExpr methodCall: classOrInterface.findAll(MethodCallExpr.class)) {
+//            Optional<Expression> scope = methodCall.getScope();
+//            scope.ifPresent((Expression expression) -> {
+//                System.out.println(methodCall.getNameAsString() + ": " + expression.toString());
+//            });
 //        }
+
         for (MethodCallExpr methodCall: classOrInterface.findAll(MethodCallExpr.class)) {
             Optional<Expression> scope = methodCall.getScope();
-            if (scope.isPresent()) {
-                System.out.println(methodCall.getNameAsString() + ": " + scope.get().toString());
-            }
+            scope.ifPresent((Expression expression) -> {
+                String type = expression.toString();
+//                System.out.println(methodCall.getNameAsString() + ":" + type);
+                if (plantUML.containsClassName(type)) {
+                    plantUML.addRelation(
+                            new ClassRelation(type, className, "*--"));
+                }
+            });
         }
 
     }
@@ -95,5 +138,34 @@ public class PlantUMLHelper {
         }
 
         return method;
+    }
+//    public static Type getGenericType(Type type) {
+//        while (type.isClassOrInterfaceType()) {
+//            ClassOrInterfaceType classOrInterfaceType = type.asClassOrInterfaceType();
+//            NodeList<Type> typeArguments = classOrInterfaceType.getTypeArguments().orElse(null);
+//            if (typeArguments != null) {
+//                return typeArguments.get(0);
+//            }
+//        }
+//        return type;
+//    }
+    public static Type getGenericType(Type type) {
+        if (type.isClassOrInterfaceType()) {
+            ClassOrInterfaceType classOrInterfaceType = type.asClassOrInterfaceType();
+            NodeList<Type> typeArguments = classOrInterfaceType.getTypeArguments().orElse(null);
+
+            if (typeArguments != null && !typeArguments.isEmpty()) {
+                // Get the first type argument
+                Type firstTypeArgument = typeArguments.get(0);
+
+                // Recursively call the method for nested generic types
+                return getGenericType(firstTypeArgument);
+            } else {
+                // No more generic types, return the current type
+                return type;
+            }
+
+        }
+        return type;
     }
 }

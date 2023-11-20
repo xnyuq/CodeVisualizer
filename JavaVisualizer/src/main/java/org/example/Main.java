@@ -12,6 +12,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 public class Main {
+    List<List<String>> test;
     public static void main(String[] args) throws IOException {
         Path pathToSource = Paths.get("D:\\study\\do_an\\JavaVisualizer\\src\\main\\java");
         SourceRoot sourceRoot = new SourceRoot(pathToSource);
@@ -20,9 +21,12 @@ public class Main {
 
         PlantUMLVisitor visitor = new PlantUMLVisitor();
         PlantUMLDiag plantUML = new PlantUMLDiag();
-//        for (CompilationUnit cu: compilationUnits) {
-//
-//        }
+
+        // Maintain a list of project's class names for later use
+        for (CompilationUnit cu: compilationUnits) {
+            String className = cu.getPrimaryTypeName().get();
+            plantUML.addClassName(className);
+        }
         for (CompilationUnit cu: compilationUnits) {
             visitor.visit(cu, plantUML);
         }

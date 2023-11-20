@@ -5,11 +5,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public class PlantUMLDiag {
     public List<JavaClass> classes = new ArrayList<>();
     public List<ClassRelation> relations = new ArrayList<>();
+    public HashSet<String> classNames = new HashSet<>();
     public PlantUMLDiag() {
     }
     public void addClass(JavaClass javaClass) {
@@ -17,6 +19,13 @@ public class PlantUMLDiag {
     }
     public void addRelation(ClassRelation relation) {
         relations.add(relation);
+    }
+    public void addClassName(String className) {
+        classNames.add(className);
+    }
+
+    public boolean containsClassName(String className) {
+        return classNames.contains(className);
     }
 
     public String toString() {
