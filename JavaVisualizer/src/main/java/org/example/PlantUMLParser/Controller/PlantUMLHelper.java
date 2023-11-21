@@ -87,17 +87,17 @@ public class PlantUMLHelper {
 
             List<VariableDeclarator> variables = field.findAll(VariableDeclarator.class);
             for (VariableDeclarator variable: variables) {
-                String type = variable.getTypeAsString();
-                if (plantUML.containsClassName(type)) {
+                Type type = getGenericType(variable.getType());
+                if (plantUML.containsClassName(type.asString())) {
                     plantUML.addRelation(
-                            new ClassRelation(type, className, "*--"));
+                            new ClassRelation(type.asString(), className, "*--"));
                 }
             }
         }
         for (MethodDeclaration method: classOrInterface.getMethods()) {
             List<VariableDeclarator> variables = method.findAll(VariableDeclarator.class);
             for (VariableDeclarator variable: variables) {
-                String type = variable.getTypeAsString();
+                String type = getGenericType(variable.getType()).asString();
                 if (plantUML.containsClassName(type)) {
                     plantUML.addRelation(
                             new ClassRelation(type, className, "*--"));
@@ -116,10 +116,10 @@ public class PlantUMLHelper {
             Optional<Expression> scope = methodCall.getScope();
             scope.ifPresent((Expression expression) -> {
                 String type = expression.toString();
-//                System.out.println(methodCall.getNameAsString() + ":" + type);
+//                System.out.println("[*] Expression extracted: " + methodCall.getNameAsString() + ":" + type);
                 if (plantUML.containsClassName(type)) {
                     plantUML.addRelation(
-                            new ClassRelation(type, className, "*--"));
+                            new ClassRelation(type, className, "--"));
                 }
             });
         }

@@ -1,9 +1,11 @@
 package org.example.PlantUMLParser.Model;
 
+import java.util.Objects;
+
 public class ClassRelation {
     private String source;
     private String target;
-    private String type;
+    private String relation;
 
     public ClassRelation() {
     }
@@ -11,7 +13,7 @@ public class ClassRelation {
     public ClassRelation(String source, String target, String type) {
         this.source = source;
         this.target = target;
-        this.type = type;
+        this.relation = type;
     }
 
     public String getSource() {
@@ -30,18 +32,31 @@ public class ClassRelation {
         this.target = target;
     }
 
-    public String getType() {
-        return type;
+    public String getRelation() {
+        return relation;
     }
 
-    public void setType(String type) {
-        this.type = type;
+    public void setRelation(String relation) {
+        this.relation = relation;
+    }
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ClassRelation that = (ClassRelation) o;
+        return Objects.equals(source, that.source) &&
+                Objects.equals(target, that.target) &&
+                Objects.equals(relation, that.relation);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(source, target, relation);
     }
 
     @Override
     public String toString() {
         return source + " "
-                + type + " "
+                + relation + " "
                 + target;
     }
 }

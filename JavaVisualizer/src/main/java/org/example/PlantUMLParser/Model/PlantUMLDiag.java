@@ -18,10 +18,15 @@ public class PlantUMLDiag {
         classes.add(javaClass);
     }
     public void addRelation(ClassRelation relation) {
-        relations.add(relation);
+        if (!relations.contains(relation) && !relation.getSource().equals(relation.getTarget())) {
+            relations.add(relation);
+        }
     }
     public void addClassName(String className) {
         classNames.add(className);
+    }
+    public List<ClassRelation> getRelations() {
+        return relations;
     }
 
     public boolean containsClassName(String className) {
