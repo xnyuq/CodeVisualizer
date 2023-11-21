@@ -12,11 +12,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws IOException {
         Options options = new Options();
+        options.addOption("i", "input", true, "Input source folder");
         options.addOption("g", "generate", true, "Generate output (uml or xsd)");
         options.addOption("o", "output", true, "Output folder path");
         options.addOption("r", "render", true, "Render format (png or ascii)");
@@ -92,7 +92,6 @@ public class Main {
         SourceStringReader reader = new SourceStringReader(plantUmlSource);
         reader.outputImage(outputStream);
 
-        // Implement your logic for displaying or saving the PNG image
         // For simplicity, let's just print the image bytes to the console
         System.out.println(outputStream.toString());
     }
