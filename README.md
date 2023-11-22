@@ -68,8 +68,9 @@ The **Code Visualizer** supports the following command-line options:
 Example usage:
 
 ```bash
-java -jar code-visualizer.jar -g uml -o output/ -r png
+java -jar CodeVisualizer.jar -g uml -o output/ -r png
 ```
+![Generate UML Class Diagram as PNG Demo](demo/demo.gif)
 ## Contributing
 
 ## License

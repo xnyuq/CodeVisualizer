@@ -7,8 +7,9 @@ import org.example.PlantUMLParser.Controller.PlantUMLVisitor;
 import org.example.PlantUMLParser.Controller.XsdConverterVisitor;
 import org.example.PlantUMLParser.Model.PlantUMLDiag;
 import org.apache.commons.cli.*;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+
+import java.awt.*;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
@@ -90,14 +91,35 @@ public class Main {
     private static void renderPlantUMLAsPNG(String plantUmlSource) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         SourceStringReader reader = new SourceStringReader(plantUmlSource);
-        reader.outputImage(outputStream);
+        String desc = reader.outputImage(outputStream).getDescription();
+        System.out.println("Rendering PlantUML as PNG:\n" + desc);
 
-        // For simplicity, let's just print the image bytes to the console
-        System.out.println(outputStream.toString());
+        // Display PlantUML as PNG
+        displayImage(outputStream, "png");
+    }
+
+    public static void displayImage(ByteArrayOutputStream outputStream, String format) {
+        byte[] byteArray = outputStream.toByteArray();
+        File  tempFile;
+        try {
+            tempFile = File.createTempFile("plantuml", "." + format);
+            try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile)) {
+                fileOutputStream.write(byteArray);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Desktop desktop = Desktop.getDesktop();
+        try {
+            desktop.open(tempFile);
+        } catch (IOException e) {
+            System.out.println("Error opening file: " + e.getMessage());
+        }
+
     }
 
     private static void renderPlantUMLAsAscii(String plantUmlSource) {
-        // Render PlantUML as ASCII art
+        // Render PlantUML as ASCII plantUML code
         System.out.println("Rendering PlantUML as ASCII:\n" + plantUmlSource);
     }
 }

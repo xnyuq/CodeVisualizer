@@ -97,11 +97,11 @@ public class XsdConverterVisitor extends VoidVisitorAdapter<Set<String>> {
 
             // Check if it's a known project class or a generic type
             if (projectClasses.contains(typeName) || isGenericType(typeName)) {
-                return "tns:" + typeName; // Assuming tns is your custom namespace prefix
+                return "tns:" + typeName;
             }
         }
 
-        return "xs:string"; // Default to xs:string for other cases
+        return "xs:string";
     }
 
     private String getXmlPrimitiveType(String typeName) {
@@ -112,11 +112,11 @@ public class XsdConverterVisitor extends VoidVisitorAdapter<Set<String>> {
             case "double" -> "xs:double";
             case "float" -> "xs:float";
             case "boolean" -> "xs:boolean";
-            case "char" -> "xs:string"; // XML Schema does not have a specific type for char
+            case "char" -> "xs:string";
             case "byte" -> "xs:byte";
             case "short" -> "xs:short";
             case "long" -> "xs:long";
-            case "Date" -> "xs:dateTime"; // Assuming you want to map Java Date to xs:dateTime
+            case "Date" -> "xs:dateTime";
             default -> "xs:string";
         };
     }
