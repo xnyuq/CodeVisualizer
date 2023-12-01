@@ -4,6 +4,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.utils.SourceRoot;
 import net.sourceforge.plantuml.SourceStringReader;
 import org.example.PlantUMLParser.Controller.PlantUMLVisitor;
+import org.example.PlantUMLParser.Controller.SequenceGenerator;
 import org.example.PlantUMLParser.Controller.XsdConverterVisitor;
 import org.example.PlantUMLParser.Model.PlantUMLDiag;
 import org.apache.commons.cli.*;
@@ -33,7 +34,7 @@ public class Main {
 
             // Accept the path to the source from the user
 
-            if ("uml".equals(generateOption) || "xsd".equals(generateOption)) {
+            if ("uml".equals(generateOption) || "xsd".equals(generateOption) || "seq".equals(generateOption)) {
                 Path pathToSource = Paths.get(sourcePath);
                 SourceRoot sourceRoot = new SourceRoot(pathToSource);
                 sourceRoot.tryToParse();
@@ -65,7 +66,14 @@ public class Main {
                         xsdVisitor.visit(cu, plantUML.classNames);
                         xsdVisitor.closeWriter();
                     }
+                } else if ("seq".equals(generateOption)) {
+                    // Generate Sequence Diagram
+                    SequenceGenerator sequenceGenerator = new SequenceGenerator(sourcePath, "C:\\Users\\xnyuq\\IdeaProjects\\CodeVisualizer\\JavaVisualizer\\src\\main\\java\\org\\example\\PlantUMLParser\\Controller\\PlantUMLVisitor.java" , "visit", "output.png", "png");
+                    sequenceGenerator.generate();
+                    sequenceGenerator.generateImg();
+                    System.out.println("File generated at " + sequenceGenerator.getOutputPath());
                 }
+
             } else {
                 System.err.println("Invalid option for -g/--generate. Use 'uml' or 'xsd'.");
             }
@@ -91,7 +99,7 @@ public class Main {
     private static void renderPlantUMLAsPNG(String plantUmlSource) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         SourceStringReader reader = new SourceStringReader(plantUmlSource);
-        String desc = reader.outputImage(outputStream).getDescription();
+        String desc = reader.generateImage(outputStream);
         System.out.println("Rendering PlantUML as PNG:\n" + desc);
 
         // Display PlantUML as PNG
