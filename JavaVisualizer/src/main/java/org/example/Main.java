@@ -13,7 +13,9 @@ import java.awt.*;
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Main {
     public static void main(String[] args) throws IOException {
@@ -43,10 +45,13 @@ public class Main {
                 PlantUMLVisitor umlVisitor = new PlantUMLVisitor();
                 PlantUMLDiag plantUML = new PlantUMLDiag();
 
+                Map<String, Path> classPathMap = new HashMap<>();
                 // Maintain a list of project's class names for later use
                 for (CompilationUnit cu : compilationUnits) {
                     String className = cu.getPrimaryTypeName().get();
                     plantUML.addClassName(className);
+                    Path filePath = cu.getStorage().get().getPath();
+                    classPathMap.put(className, filePath);
                 }
 
                 for (CompilationUnit cu : compilationUnits) {
@@ -68,7 +73,7 @@ public class Main {
                     }
                 } else if ("seq".equals(generateOption)) {
                     // Generate Sequence Diagram
-                    SequenceGenerator sequenceGenerator = new SequenceGenerator(sourcePath, "C:\\Users\\xnyuq\\IdeaProjects\\CodeVisualizer\\JavaVisualizer\\src\\main\\java\\org\\example\\PlantUMLParser\\Controller\\PlantUMLVisitor.java" , "visit", "output.png", "png");
+                    SequenceGenerator sequenceGenerator = new SequenceGenerator(sourcePath, classPathMap, "C:\\Users\\xnyuq\\IdeaProjects\\CodeVisualizer\\JavaVisualizer\\src\\main\\java\\org\\example\\PlantUMLParser\\Controller\\PlantUMLVisitor.java" , "visit", "output.png", "png");
                     sequenceGenerator.generate();
                     sequenceGenerator.generateImg();
                     System.out.println("File generated at " + sequenceGenerator.getOutputPath());

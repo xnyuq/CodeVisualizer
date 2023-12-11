@@ -17,7 +17,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.Map;
 
 public class SequenceGenerator {
 
@@ -29,7 +31,7 @@ public class SequenceGenerator {
     public String plantUML;
     HashSet<String> parsedMethods = new HashSet<>();
 
-    public SequenceGenerator(String sourcePath, String classPath, String method, String outputPath, String renderFormat) {
+    public SequenceGenerator(String sourcePath, Map<String, Path> classPathMap, String classPath, String method, String outputPath, String renderFormat) {
         this.sourcePath = sourcePath;
         this.classPath = classPath;
         this.method = method;
@@ -58,31 +60,32 @@ public class SequenceGenerator {
         File file = new File(classPath);
         try {
             CompilationUnit compilationUnit = JavaParser.parse(file);
+            String className = compilationUnit.getType(0).getNameAsString();
             compilationUnit.findFirst(MethodDeclaration.class, methodDeclaration -> {
                 return methodDeclaration.getNameAsString().equals(method);
             }).ifPresent(methodDeclaration -> {
-                parseMethod(compilationUnit.getType(0).getNameAsString(), methodDeclaration);
+                parseMethod(null, className, methodDeclaration);
             });
             plantUML = plantUML + "@enduml";
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
-    private void parseMethod(String callerClass, MethodDeclaration methodDeclaration) {
-        if (parsedMethods.contains(methodDeclaration.getDeclarationAsString())) {
+    private void parseMethod(String callerClass, String calleeClass, MethodDeclaration methodDeclaration) {
+        String fullMethodName = calleeClass + "." + methodDeclaration.getDeclarationAsString();
+        if (parsedMethods.contains(fullMethodName)) {
             return;
         }
-        String methodName = methodDeclaration.getNameAsString();
-        parsedMethods.add(methodName);
+        parsedMethods.add(fullMethodName);
         methodDeclaration.findAll(MethodCallExpr.class).forEach(methodCallExpr -> {
             try {
                 // parse method call
                 String context = methodCallExpr.resolve().getName();
-                String calleeClass = methodCallExpr.resolve().getClassName();
                 plantUML += callerClass + " -> " + calleeClass + " : " + context + "\n";
                 plantUML += "activate " + calleeClass + "\n";
                 // get class file path
 
+                // continue to parse target callee function
 //                parseMethod(calleeClass, methodCallExpr.resolve().getDeclaration().asMethodDeclaration());
                 plantUML += calleeClass + " -->> " + callerClass + "\n";
                 plantUML += "deactivate " + calleeClass + "\n";
