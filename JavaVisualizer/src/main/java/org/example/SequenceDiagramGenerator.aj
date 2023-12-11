@@ -6,13 +6,13 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.reflect.CodeSignature;
 import org.aspectj.lang.reflect.MethodSignature;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.awt.*;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
+
+import static org.example.PlantUMLParser.Controller.PlantUMLHelper.renderPlantUMLAsPNG;
 
 public aspect SequenceDiagramGenerator {
 
@@ -97,9 +97,7 @@ public aspect SequenceDiagramGenerator {
         umlsrc.add(sequenceInfo);
         umlsrc.add("deactivate " + className);
 
-        System.out.println("Call depth: " + callDepth);
         if (callDepth == 0) {
-            System.out.println("wtf");
             umlsrc.add("@enduml");
             writeToFile();
             generateUML();
@@ -117,7 +115,7 @@ public aspect SequenceDiagramGenerator {
         sequenceInfo += className;
 
         if (returnValue != null) {
-            sequenceInfo += ":" + returnValue;
+            sequenceInfo += ":" + returnValue.getClass().getName();
         }
         return sequenceInfo;
     }
@@ -139,6 +137,9 @@ public aspect SequenceDiagramGenerator {
             List<GeneratedImage> images = sourceReader.getGeneratedImages();
             File sequenceDiagram = images.get(0).getPngFile();
             System.out.println("Sequence diagram generated at: " + sequenceDiagram.getAbsolutePath());
+
+            Desktop desktop = Desktop.getDesktop();
+            desktop.open(sequenceDiagram);
         } catch (IOException e) {
             e.printStackTrace();
         }

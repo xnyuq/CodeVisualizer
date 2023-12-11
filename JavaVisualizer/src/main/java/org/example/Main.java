@@ -17,6 +17,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.example.PlantUMLParser.Controller.PlantUMLHelper.renderPlantUMLAsPNG;
+
 public class Main {
     public static void main(String[] args) throws IOException {
         Options options = new Options();
@@ -101,35 +103,6 @@ public class Main {
         }
     }
 
-    private static void renderPlantUMLAsPNG(String plantUmlSource) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        SourceStringReader reader = new SourceStringReader(plantUmlSource);
-        String desc = reader.generateImage(outputStream);
-        System.out.println("Rendering PlantUML as PNG:\n" + desc);
-
-        // Display PlantUML as PNG
-        displayImage(outputStream, "png");
-    }
-
-    public static void displayImage(ByteArrayOutputStream outputStream, String format) {
-        byte[] byteArray = outputStream.toByteArray();
-        File  tempFile;
-        try {
-            tempFile = File.createTempFile("plantuml", "." + format);
-            try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile)) {
-                fileOutputStream.write(byteArray);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        Desktop desktop = Desktop.getDesktop();
-        try {
-            desktop.open(tempFile);
-        } catch (IOException e) {
-            System.out.println("Error opening file: " + e.getMessage());
-        }
-
-    }
 
     private static void renderPlantUMLAsAscii(String plantUmlSource) {
         // Render PlantUML as ASCII plantUML code

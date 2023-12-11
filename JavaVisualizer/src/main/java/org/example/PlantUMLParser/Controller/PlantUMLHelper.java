@@ -7,12 +7,18 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
+import net.sourceforge.plantuml.SourceStringReader;
 import org.example.PlantUMLParser.Model.ClassField;
 import org.example.PlantUMLParser.Model.ClassMethod;
 import org.example.PlantUMLParser.Model.ClassRelation;
 import org.example.PlantUMLParser.Model.PlantUMLDiag;
 
 import javax.management.relation.Relation;
+import java.awt.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -167,5 +173,35 @@ public class PlantUMLHelper {
 
         }
         return type;
+    }
+
+    public static void renderPlantUMLAsPNG(String plantUmlSource) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        SourceStringReader reader = new SourceStringReader(plantUmlSource);
+        String desc = reader.generateImage(outputStream);
+        System.out.println("Rendering PlantUML as PNG:\n" + desc);
+
+        // Display PlantUML as PNG
+        displayImage(outputStream, "png");
+    }
+
+    public static void displayImage(ByteArrayOutputStream outputStream, String format) {
+        byte[] byteArray = outputStream.toByteArray();
+        File tempFile;
+        try {
+            tempFile = File.createTempFile("plantuml", "." + format);
+            try (FileOutputStream fileOutputStream = new FileOutputStream(tempFile)) {
+                fileOutputStream.write(byteArray);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Desktop desktop = Desktop.getDesktop();
+        try {
+            desktop.open(tempFile);
+        } catch (IOException e) {
+            System.out.println("Error opening file: " + e.getMessage());
+        }
+
     }
 }
