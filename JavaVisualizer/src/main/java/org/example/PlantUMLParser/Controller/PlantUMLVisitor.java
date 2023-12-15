@@ -25,6 +25,7 @@ public class PlantUMLVisitor extends VoidVisitorAdapter<PlantUMLDiag> {
         if (classOrInterface.isInterface()) {
             javaClass.setType("interface");
         } else {
+
             javaClass.setType("class");
             for (Modifier modifier: classOrInterface.getModifiers()) {
                 if (modifier.toString().contains("abstract")) {

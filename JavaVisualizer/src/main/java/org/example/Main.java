@@ -75,7 +75,7 @@ public class Main {
                     }
                 } else if ("seq".equals(generateOption)) {
                     // Generate Sequence Diagram
-                    SequenceGenerator sequenceGenerator = new SequenceGenerator(sourcePath, classPathMap, "C:\\Users\\xnyuq\\IdeaProjects\\CodeVisualizer\\JavaVisualizer\\src\\main\\java\\org\\example\\PlantUMLParser\\Controller\\PlantUMLVisitor.java" , "visit", "output.png", "png");
+                    SequenceGenerator sequenceGenerator = new SequenceGenerator(sourcePath, classPathMap, "Main" , "main", "output.png", "png");
                     sequenceGenerator.generate();
                     sequenceGenerator.generateImg();
                     System.out.println("File generated at " + sequenceGenerator.getOutputPath());

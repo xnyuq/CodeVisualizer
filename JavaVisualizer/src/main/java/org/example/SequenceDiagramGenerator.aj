@@ -8,11 +8,8 @@ import org.aspectj.lang.reflect.MethodSignature;
 
 import java.awt.*;
 import java.io.*;
-import java.util.ArrayList;
+import java.util.*;
 import java.util.List;
-import java.util.Stack;
-
-import static org.example.PlantUMLParser.Controller.PlantUMLHelper.renderPlantUMLAsPNG;
 
 public aspect SequenceDiagramGenerator {
 
@@ -22,14 +19,18 @@ public aspect SequenceDiagramGenerator {
     private ArrayList<String> umlsrc = new ArrayList<>();
     private Stack<String> stack;
     private int callDepth;
+    private static HashSet<MethodInfoWithDepth> traversedMethodBefore = new HashSet<>();
+    private static HashSet<MethodInfoWithDepth> traversedMethodAfter = new HashSet<>();
 
     SequenceDiagramGenerator() {
         initialize();
     }
 
     private void initialize() {
+        callDepth = 0;
         umlsrc.add("@startuml");
         umlsrc.add("autonumber");
+        umlsrc.add("actor user #red");
         stack = new Stack<>();
         stack.push(NULL_CLASS);
     }
@@ -45,18 +46,29 @@ public aspect SequenceDiagramGenerator {
     }
 
     private void handleBefore(JoinPoint joinPoint) {
-        String className = getClassName(joinPoint);
+        String currentClassName = getClassName(joinPoint);
         String funcInfo = getMethodInfo(joinPoint);
-        String lastClass = stack.peek();
+        boolean skip = false;
 
-        if (lastClass.equals(NULL_CLASS)) {
-            umlsrc.add("[-> " + className + ": " + funcInfo);
-        } else {
-            umlsrc.add(lastClass + " -> " + className + ": " + funcInfo);
+        String prevClassName = stack.peek();
+        stack.push(currentClassName);
+
+        MethodInfoWithDepth methodInfoWithDepth = new MethodInfoWithDepth(prevClassName + funcInfo, callDepth);
+        if (traversedMethodBefore.contains(methodInfoWithDepth)) {
+            skip = true;
+        }
+        traversedMethodBefore.add(methodInfoWithDepth);
+
+        if (!skip) {
+            if (prevClassName.equals(NULL_CLASS)) {
+                umlsrc.add("user -> " + currentClassName + ": " + funcInfo);
+            } else {
+                umlsrc.add(prevClassName + " -> " + currentClassName + ": " + funcInfo);
+            }
+
+            umlsrc.add("activate " + currentClassName);
         }
 
-        stack.push(className);
-        umlsrc.add("activate " + className);
         callDepth++;
     }
 
@@ -87,15 +99,27 @@ public aspect SequenceDiagramGenerator {
     }
 
     private void handleAfter(Object r, JoinPoint joinPoint) {
+
+        String funcInfo = getMethodInfo(joinPoint);
+        boolean skip = false;
+
         String className = getClassName(joinPoint);
         callDepth--;
 
         stack.pop();
         String lastClass = stack.peek();
-        String sequenceInfo = buildSequenceInfo(className, lastClass, r);
 
-        umlsrc.add(sequenceInfo);
-        umlsrc.add("deactivate " + className);
+        if (traversedMethodAfter.contains(new MethodInfoWithDepth(lastClass + funcInfo, callDepth))) {
+            skip = true;
+        }
+        traversedMethodAfter.add(new MethodInfoWithDepth(lastClass + funcInfo, callDepth));
+
+        if (!skip) {
+            String sequenceInfo = buildSequenceInfo(className, lastClass, r);
+            if (sequenceInfo != null)
+                umlsrc.add(sequenceInfo);
+            umlsrc.add("deactivate " + className);
+        }
 
         if (callDepth == 0) {
             umlsrc.add("@enduml");
@@ -106,15 +130,14 @@ public aspect SequenceDiagramGenerator {
     }
 
     private String buildSequenceInfo(String className, String lastClass, Object returnValue) {
-        String sequenceInfo;
+        String sequenceInfo = null;
         if (lastClass.equals(NULL_CLASS)) {
-            sequenceInfo = "[<--";
-        } else {
-            sequenceInfo = lastClass + " <-- ";
+            sequenceInfo = "user <-- " + className;
+        } else if (!className.equals(lastClass)) {
+            sequenceInfo = lastClass + " <-- " + className;
         }
-        sequenceInfo += className;
 
-        if (returnValue != null) {
+        if (sequenceInfo != null && returnValue != null) {
             sequenceInfo += ":" + returnValue.getClass().getName();
         }
         return sequenceInfo;
@@ -143,5 +166,32 @@ public aspect SequenceDiagramGenerator {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private class MethodInfoWithDepth {
+        String methodInfo;
+        int depth;
+
+        public MethodInfoWithDepth(String methodInfo, int depth) {
+            this.methodInfo = methodInfo;
+            this.depth = depth;
+        }
+        @Override
+        public boolean equals(Object o) {
+            if (o == this) {
+                return true;
+            }
+            if (!(o instanceof MethodInfoWithDepth)) {
+                return false;
+            }
+            MethodInfoWithDepth other = (MethodInfoWithDepth) o;
+            return this.methodInfo.equals(other.methodInfo) && this.depth == other.depth;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(methodInfo, depth);
+        }
+
     }
 }

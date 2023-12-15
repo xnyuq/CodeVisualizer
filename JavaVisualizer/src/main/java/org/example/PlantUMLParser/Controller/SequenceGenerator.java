@@ -7,16 +7,14 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.symbolsolver.JavaSymbolSolver;
 import com.github.javaparser.symbolsolver.model.resolution.TypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSolver;
+import com.github.javaparser.symbolsolver.resolution.typesolvers.JarTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
 import net.sourceforge.plantuml.FileFormat;
 import net.sourceforge.plantuml.FileFormatOption;
 import net.sourceforge.plantuml.SourceStringReader;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
+import java.io.*;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Map;
@@ -24,31 +22,34 @@ import java.util.Map;
 public class SequenceGenerator {
 
     public String sourcePath;
-    public String classPath;
+    Map<String, Path> classPathMap;
+    public String className;
     public String method;
     public String outputPath;
     public String renderFormat;
     public String plantUML;
     HashSet<String> parsedMethods = new HashSet<>();
 
-    public SequenceGenerator(String sourcePath, Map<String, Path> classPathMap, String classPath, String method, String outputPath, String renderFormat) {
+    public SequenceGenerator(String sourcePath, Map<String, Path> classPathMap, String className, String method, String outputPath, String renderFormat) {
         this.sourcePath = sourcePath;
-        this.classPath = classPath;
+        this.classPathMap = classPathMap;
+        this.className = className;
         this.method = method;
         this.outputPath = sourcePath + "\\" + outputPath;
         this.renderFormat = renderFormat;
         plantUML = "@startuml\n";
         plantUML = plantUML + "actor user #red\n";
-        String className = classPath.substring(classPath.lastIndexOf("\\") + 1, classPath.lastIndexOf("."));
         plantUML = plantUML + "user" + " -> " + className + " : " + method + "\n";
         plantUML = plantUML + "activate " + className + "\n";
     }
 
 
-    public void generate() {
+    public void generate() throws IOException {
         // set up symbolsolver
-        TypeSolver typeSolver = new CombinedTypeSolver(
+        TypeSolver typeSolver = null;
+        typeSolver = new CombinedTypeSolver(
                 new ReflectionTypeSolver(),
+                new JarTypeSolver(new File("C:\\Users\\xnyuq\\.m2\\repository\\com\\github\\javaparser\\javaparser-core\\3.11.0\\javaparser-core-3.11.0.jar")),
                 new JavaParserTypeSolver(new File(sourcePath))
         );
 
@@ -57,46 +58,73 @@ public class SequenceGenerator {
                 .getStaticConfiguration()
                 .setSymbolResolver(symbolSolver);
 
-        File file = new File(classPath);
+        parseMethod(method, className);
+        plantUML = plantUML + "@enduml";
+    }
+    private void parseMethod(String methodName, String className) {
+        String classPath = classPathMap.get(className).toString();
+        File classFile = new File(classPath);
+        MethodDeclaration methodDeclaration = null;
         try {
-            CompilationUnit compilationUnit = JavaParser.parse(file);
-            String className = compilationUnit.getType(0).getNameAsString();
-            compilationUnit.findFirst(MethodDeclaration.class, methodDeclaration -> {
-                return methodDeclaration.getNameAsString().equals(method);
-            }).ifPresent(methodDeclaration -> {
-                parseMethod(null, className, methodDeclaration);
-            });
-            plantUML = plantUML + "@enduml";
+            CompilationUnit compilationUnit = JavaParser.parse(classFile);
+            methodDeclaration = compilationUnit.findFirst(MethodDeclaration.class, method -> {
+                return method.getNameAsString().equals(methodName);
+            }).get();
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
         }
-    }
-    private void parseMethod(String callerClass, String calleeClass, MethodDeclaration methodDeclaration) {
-        String fullMethodName = calleeClass + "." + methodDeclaration.getDeclarationAsString();
-        if (parsedMethods.contains(fullMethodName)) {
+        if (methodDeclaration == null) {
+            System.out.println("Method not found: " + methodName);
             return;
         }
-        parsedMethods.add(fullMethodName);
-        methodDeclaration.findAll(MethodCallExpr.class).forEach(methodCallExpr -> {
-            try {
+
+
+        try {
+//            String calleeClass = methodDeclaration.resolve().getClassName();
+//            String fullMethodName = calleeClass + "." + methodDeclaration.getDeclarationAsString();
+//            if (parsedMethods.contains(fullMethodName)) {
+//                return;
+//            }
+//            parsedMethods.add(fullMethodName);
+
+            String callerClass = methodDeclaration.resolve().getClassName();
+            methodDeclaration.findAll(MethodCallExpr.class).forEach(methodCallExpr -> {
+//                System.out.println(methodCallExpr.getNameAsString());
                 // parse method call
-                String context = methodCallExpr.resolve().getName();
-                plantUML += callerClass + " -> " + calleeClass + " : " + context + "\n";
-                plantUML += "activate " + calleeClass + "\n";
-                // get class file path
+                try {
+                    String calleeClass = methodCallExpr.resolve().getClassName();
+                    String context = methodCallExpr.resolve().getName();
+                    if (parsedMethods.contains(calleeClass + "." + context)) {
+                        return;
+                    }
+                    parsedMethods.add(calleeClass + "." + context);
+                    if (!classPathMap.containsKey(calleeClass)) {
+                        return;
+                    }
 
-                // continue to parse target callee function
-//                parseMethod(calleeClass, methodCallExpr.resolve().getDeclaration().asMethodDeclaration());
-                plantUML += calleeClass + " -->> " + callerClass + "\n";
-                plantUML += "deactivate " + calleeClass + "\n";
+                    plantUML += callerClass + " -> " + calleeClass + " : " + context + "\n";
+                    plantUML += "activate " + calleeClass + "\n";
+                    // get class file path
 
-                // plantuml
+                    // continue to parse target callee function
+                    MethodDeclaration calleeMethodDeclaration = methodCallExpr.resolve().toAst().orElseThrow();
+                    String calleeMethodName = calleeMethodDeclaration.getNameAsString();
+                    parseMethod(calleeMethodName, calleeClass);
+                    if (!callerClass.equals(calleeClass))
+                        plantUML += calleeClass + " -->> " + callerClass + "\n";
+                    plantUML += "deactivate " + calleeClass + "\n";
+                } catch (Exception e) {
+                    System.out.println("Method cannot be resolved: " + e.getMessage());
+                    // Method cannot be resolved -> not in project source -> ignore
+                }
 
-            } catch (Exception e) {
-                // type cannot be resolved -> not in project source -> ignore
-            }
-        });
+                    // plantuml
 
+            });
+        } catch (Exception e) {
+            // type cannot be resolved -> not in project source -> ignore
+//            System.out.println("Type cannot be resolved: " + e.getMessage());
+        }
     }
 
 
