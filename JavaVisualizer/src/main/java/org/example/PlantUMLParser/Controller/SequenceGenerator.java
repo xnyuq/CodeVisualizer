@@ -10,13 +10,14 @@ import com.github.javaparser.symbolsolver.resolution.typesolvers.CombinedTypeSol
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JarTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.JavaParserTypeSolver;
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ReflectionTypeSolver;
-import net.sourceforge.plantuml.FileFormat;
-import net.sourceforge.plantuml.FileFormatOption;
-import net.sourceforge.plantuml.SourceStringReader;
+import net.sourceforge.plantuml.*;
 
+import java.awt.*;
 import java.io.*;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 public class SequenceGenerator {
@@ -26,30 +27,30 @@ public class SequenceGenerator {
     public String className;
     public String method;
     public String outputPath;
-    public String renderFormat;
-    public String plantUML;
-    HashSet<String> parsedMethods = new HashSet<>();
+    public ArrayList<String> umlsrc = new ArrayList<>();
+    public HashSet<String> parsedMethods = new HashSet<>();
 
-    public SequenceGenerator(String sourcePath, Map<String, Path> classPathMap, String className, String method, String outputPath, String renderFormat) {
+    public SequenceGenerator(String sourcePath, Map<String, Path> classPathMap, String className, String method, String outputPath) {
         this.sourcePath = sourcePath;
         this.classPathMap = classPathMap;
         this.className = className;
         this.method = method;
-        this.outputPath = sourcePath + "\\" + outputPath;
-        this.renderFormat = renderFormat;
-        plantUML = "@startuml\n";
-        plantUML = plantUML + "actor user #red\n";
-        plantUML = plantUML + "user" + " -> " + className + " : " + method + "\n";
-        plantUML = plantUML + "activate " + className + "\n";
+        this.outputPath = outputPath;
+        umlsrc.add("@startuml");
+        umlsrc.add("actor user #red");
+        umlsrc.add("user" + " -> " + className + " : " + method);
+        umlsrc.add("activate " + className);
     }
 
 
     public void generate() throws IOException {
-        // set up symbolsolver
+        // Set up symbolsolver
         TypeSolver typeSolver = null;
+//        String jarPath = "C:\\Users\\Lenovo\\.m2\\repository\\com\\github\\javaparser\\javaparser-core\\3.11.0\\javaparser-core-3.11.0.jar";
         typeSolver = new CombinedTypeSolver(
                 new ReflectionTypeSolver(),
-                new JarTypeSolver(new File("C:\\Users\\xnyuq\\.m2\\repository\\com\\github\\javaparser\\javaparser-core\\3.11.0\\javaparser-core-3.11.0.jar")),
+//                new JarTypeSolver(new File(jarPath)),
+//                new JarTypeSolver(new File("C:\\Users\\xnyuq\\.m2\\repository\\com\\github\\javaparser\\javaparser-core\\3.11.0\\javaparser-core-3.11.0.jar")),
                 new JavaParserTypeSolver(new File(sourcePath))
         );
 
@@ -59,7 +60,9 @@ public class SequenceGenerator {
                 .setSymbolResolver(symbolSolver);
 
         parseMethod(method, className);
-        plantUML = plantUML + "@enduml";
+        umlsrc.add("@enduml");
+        writeToFile();
+        generateUML();
     }
     private void parseMethod(String methodName, String className) {
         String classPath = classPathMap.get(className).toString();
@@ -102,23 +105,24 @@ public class SequenceGenerator {
                         return;
                     }
 
-                    plantUML += callerClass + " -> " + calleeClass + " : " + context + "\n";
-                    plantUML += "activate " + calleeClass + "\n";
+                    umlsrc.add(callerClass + " -> " + calleeClass + " : " + context);
+                    umlsrc.add("activate " + calleeClass);
                     // get class file path
 
                     // continue to parse target callee function
                     MethodDeclaration calleeMethodDeclaration = methodCallExpr.resolve().toAst().orElseThrow();
                     String calleeMethodName = calleeMethodDeclaration.getNameAsString();
                     parseMethod(calleeMethodName, calleeClass);
-                    if (!callerClass.equals(calleeClass))
-                        plantUML += calleeClass + " -->> " + callerClass + "\n";
-                    plantUML += "deactivate " + calleeClass + "\n";
+                    if (!callerClass.equals(calleeClass)) {
+                        String returnType = calleeMethodDeclaration.getTypeAsString();
+                        umlsrc.add(calleeClass + " -->> " + callerClass + " : " + returnType);
+                    }
+                    umlsrc.add("deactivate " + calleeClass);
                 } catch (Exception e) {
-                    System.out.println("Method cannot be resolved: " + e.getMessage());
+//                    System.out.println("Method cannot be resolved: " + e.getMessage());
                     // Method cannot be resolved -> not in project source -> ignore
                 }
 
-                    // plantuml
 
             });
         } catch (Exception e) {
@@ -128,25 +132,37 @@ public class SequenceGenerator {
     }
 
 
-    public String getUMLAsString() {
-        return plantUML;
+    public ArrayList<String> getUMLAsString() {
+        return umlsrc;
     }
 
-    public void generateImg() {
-        File file = new File(outputPath);
-        SourceStringReader reader = new SourceStringReader(plantUML);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try {
-            reader.outputImage(outputStream, new FileFormatOption(FileFormat.PNG));
-            try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
-                fileOutputStream.write(outputStream.toByteArray());
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
     public String getOutputPath() {
         return outputPath;
+    }
+
+    private void generateUML() {
+        try {
+            File umlSource = new File(this.outputPath);
+            SourceFileReader sourceReader = new SourceFileReader(umlSource);
+            List<GeneratedImage> images = sourceReader.getGeneratedImages();
+            File sequenceDiagram = images.get(0).getPngFile();
+            System.out.println("Sequence diagram generated at: " + sequenceDiagram.getAbsolutePath());
+
+            Desktop desktop = Desktop.getDesktop();
+            desktop.open(sequenceDiagram);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void writeToFile() {
+        try (PrintWriter fileWriter = new PrintWriter(outputPath)) {
+            for (String line : umlsrc) {
+                fileWriter.println(line);
+            }
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 }
 

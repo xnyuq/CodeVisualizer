@@ -1,11 +1,12 @@
 package org.example;
 
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.utils.SourceRoot;
-import net.sourceforge.plantuml.SourceStringReader;
 import org.example.PlantUMLParser.Controller.PlantUMLVisitor;
 import org.example.PlantUMLParser.Controller.SequenceGenerator;
 import org.example.PlantUMLParser.Controller.XsdConverterVisitor;
+import org.example.PlantUMLParser.Controller.XsdToJavaConverter;
 import org.example.PlantUMLParser.Model.PlantUMLDiag;
 import org.apache.commons.cli.*;
 
@@ -23,9 +24,11 @@ public class Main {
     public static void main(String[] args) throws IOException {
         Options options = new Options();
         options.addOption("i", "input", true, "Input source folder");
-        options.addOption("g", "generate", true, "Generate output (uml or xsd)");
+        options.addOption("g", "generate", true, "Generate output (uml/xsd/seq/class)");
         options.addOption("o", "output", true, "Output folder path");
         options.addOption("r", "render", true, "Render format (png or ascii)");
+        options.addOption("c", "class", true, "Class name");
+        options.addOption("m", "method", true, "Method name");
 
         CommandLineParser parser = new DefaultParser();
         try {
@@ -35,6 +38,8 @@ public class Main {
             String generateOption = cmd.getOptionValue("g");
             String outputFolder = cmd.getOptionValue("o", "output/");
             String renderFormat = cmd.getOptionValue("r", "png");
+            String className = cmd.getOptionValue("c", "Main");
+            String methodName = cmd.getOptionValue("m", "main");
 
             // Accept the path to the source from the user
 
@@ -50,10 +55,10 @@ public class Main {
                 Map<String, Path> classPathMap = new HashMap<>();
                 // Maintain a list of project's class names for later use
                 for (CompilationUnit cu : compilationUnits) {
-                    String className = cu.getPrimaryTypeName().get();
-                    plantUML.addClassName(className);
+                    String className1 = cu.getPrimaryTypeName().get();
+                    plantUML.addClassName(className1);
                     Path filePath = cu.getStorage().get().getPath();
-                    classPathMap.put(className, filePath);
+                    classPathMap.put(className1, filePath);
                 }
 
                 for (CompilationUnit cu : compilationUnits) {
@@ -67,22 +72,28 @@ public class Main {
                 } else if ("xsd".equals(generateOption)) {
                     // Generate XSD files
                     for (CompilationUnit cu : compilationUnits) {
-                        String className = cu.getPrimaryTypeName().get();
-                        XsdConverterVisitor xsdVisitor = new XsdConverterVisitor(outputFolder + className + ".xsd");
-                        System.out.println("Parsing " + className + "...");
+                        String className1 = cu.getPrimaryTypeName().get();
+                        XsdConverterVisitor xsdVisitor = new XsdConverterVisitor(outputFolder + className1 + ".xsd");
+                        System.out.println("Parsing " + className1 + "...");
                         xsdVisitor.visit(cu, plantUML.classNames);
                         xsdVisitor.closeWriter();
                     }
                 } else if ("seq".equals(generateOption)) {
                     // Generate Sequence Diagram
-                    SequenceGenerator sequenceGenerator = new SequenceGenerator(sourcePath, classPathMap, "Main" , "main", "output.png", "png");
+
+                    SequenceGenerator sequenceGenerator = new SequenceGenerator(sourcePath, classPathMap, className , methodName, "sequence1.txt");
                     sequenceGenerator.generate();
-                    sequenceGenerator.generateImg();
                     System.out.println("File generated at " + sequenceGenerator.getOutputPath());
                 }
 
-            } else {
-                System.err.println("Invalid option for -g/--generate. Use 'uml' or 'xsd'.");
+            } else if ("class".equals(generateOption)) {
+                XsdToJavaConverter xsdToJavaConverter = new XsdToJavaConverter();
+                ClassOrInterfaceDeclaration classOrInterface = xsdToJavaConverter.generateClassFromXml(sourcePath);
+                System.out.println(classOrInterface.toString());
+
+            }
+            else {
+                System.err.println("Invalid option for -g/--generate. Use 'uml' or 'xsd' or 'seq'.");
             }
         } catch (ParseException e) {
             System.err.println("Error parsing command-line arguments: " + e.getMessage());

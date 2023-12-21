@@ -18,7 +18,7 @@ public aspect SequenceDiagramGenerator {
 
     private ArrayList<String> umlsrc = new ArrayList<>();
     private Stack<String> stack;
-    private int callDepth;
+    private int callDepth = 0;
     private static HashSet<MethodInfoWithDepth> traversedMethodBefore = new HashSet<>();
     private static HashSet<MethodInfoWithDepth> traversedMethodAfter = new HashSet<>();
 
@@ -27,14 +27,12 @@ public aspect SequenceDiagramGenerator {
     }
 
     private void initialize() {
-        callDepth = 0;
         umlsrc.add("@startuml");
         umlsrc.add("autonumber");
         umlsrc.add("actor user #red");
         stack = new Stack<>();
         stack.push(NULL_CLASS);
     }
-
     pointcut traced() : !within(org.example.SequenceDiagramGenerator) && (execution(public * *.*(..)));
 
     before() : traced() {

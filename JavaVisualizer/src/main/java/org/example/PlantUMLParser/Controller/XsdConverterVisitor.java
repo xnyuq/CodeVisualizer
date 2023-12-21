@@ -57,10 +57,10 @@ public class XsdConverterVisitor extends VoidVisitorAdapter<Set<String>> {
             }
         });
 
-        classOrInterface.getMethods().forEach((MethodDeclaration method) -> {
-            writeLine("      <element name=\"" + method.getNameAsString() +
-                    "\" type=\"" + getXmlType(method.getType(), projectClasses) + "\"/>");
-        });
+//        classOrInterface.getMethods().forEach((MethodDeclaration method) -> {
+//            writeLine("      <element name=\"" + method.getNameAsString() +
+//                    "\" type=\"" + getXmlType(method.getType(), projectClasses) + "\"/>");
+//        });
 
         writeLine("    </sequence>");
         writeLine("  </complexType>");
@@ -93,11 +93,11 @@ public class XsdConverterVisitor extends VoidVisitorAdapter<Set<String>> {
             return getXmlPrimitiveType(type.asString());
         } else if (type.isClassOrInterfaceType()) {
             ClassOrInterfaceType classType = type.asClassOrInterfaceType();
-            String typeName = classType.getNameAsString();
+            String typeName = classType.toString();
 
             // Check if it's a known project class or a generic type
             if (projectClasses.contains(typeName) || isGenericType(typeName)) {
-                return "tns:" + typeName;
+                return "tns:" + extractGenericType(typeName);
             }
         }
 
@@ -132,5 +132,16 @@ public class XsdConverterVisitor extends VoidVisitorAdapter<Set<String>> {
 
         // Check if the type is primitive, defined in the project, or a generic type
         return isPrimitive(typeName) || projectClasses.contains(typeName) || isGenericType(typeName);
+    }
+        private String extractGenericType(String typeName) {
+        // Extract the generic type inside the angle brackets
+        int start = typeName.indexOf("<");
+        int end = typeName.lastIndexOf(">");
+
+        if (start != -1 && end != -1 && start < end) {
+            return typeName.substring(start + 1, end);
+        }
+
+        return typeName;
     }
 }
