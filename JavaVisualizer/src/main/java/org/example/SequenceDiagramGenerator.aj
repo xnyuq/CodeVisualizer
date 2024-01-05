@@ -15,6 +15,7 @@ public aspect SequenceDiagramGenerator {
 
     private static final String PATH = "sequence.txt";
     private static final String NULL_CLASS = "null_class";
+    private static boolean check = true;
 
     private ArrayList<String> umlsrc = new ArrayList<>();
     private Stack<String> stack;
@@ -41,6 +42,11 @@ public aspect SequenceDiagramGenerator {
 
     after()returning(Object r): traced(){
         handleAfter(r, thisJoinPoint);
+        if (check) {
+            System.out.println("Executing: " + thisJoinPoint);
+            System.out.println("Call from: " + thisEnclosingJoinPointStaticPart);
+            check = false;
+        }
     }
 
     private void handleBefore(JoinPoint joinPoint) {
