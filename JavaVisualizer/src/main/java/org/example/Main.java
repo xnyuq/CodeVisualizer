@@ -80,7 +80,6 @@ public class Main {
                     }
                 } else if ("seq".equals(generateOption)) {
                     // Generate Sequence Diagram
-
                     SequenceGenerator sequenceGenerator = new SequenceGenerator(sourcePath, classPathMap, className , methodName, "sequence1.txt");
                     sequenceGenerator.generate();
                     System.out.println("File generated at " + sequenceGenerator.getOutputPath());
