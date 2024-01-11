@@ -96,7 +96,7 @@ public class PlantUMLHelper {
                 Type type = getGenericType(variable.getType());
                 if (plantUML.containsClassName(type.asString())) {
                     plantUML.addRelation(
-                            new ClassRelation(type.asString(), className, "*--"));
+                            new ClassRelation(type.asString(), className, "o--"));
                 }
             }
         }
@@ -106,7 +106,7 @@ public class PlantUMLHelper {
                 String type = getGenericType(variable.getType()).asString();
                 if (plantUML.containsClassName(type)) {
                     plantUML.addRelation(
-                            new ClassRelation(type, className, "*--"));
+                            new ClassRelation(type, className, "o--"));
                 }
             }
         }
