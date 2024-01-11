@@ -60,6 +60,7 @@ public class SequenceGenerator {
                 .setSymbolResolver(symbolSolver);
 
         parseMethod(method, className);
+        umlsrc.add("deactivate " + className);
         umlsrc.add("@enduml");
         writeToFile();
         generateUML();
