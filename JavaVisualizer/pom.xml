@@ -30,17 +30,17 @@
             <version>1.6.0</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.aspectj</groupId>
-            <artifactId>aspectjrt</artifactId>
-            <version>1.9.21.RC1</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.aspectj</groupId>-->
+<!--            <artifactId>aspectjrt</artifactId>-->
+<!--            <version>1.9.21.RC1</version>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>org.aspectj</groupId>
-            <artifactId>aspectjtools</artifactId>
-            <version>1.9.21.RC1</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.aspectj</groupId>-->
+<!--            <artifactId>aspectjtools</artifactId>-->
+<!--            <version>1.9.21.RC1</version>-->
+<!--        </dependency>-->
     </dependencies>
 
 </project>
